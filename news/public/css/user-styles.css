@@ -1,0 +1,85 @@
+/* Main Background and Typography */
+body {
+    background-image: url('../child.jpg');
+    background-size: contain;
+    background-repeat: repeat;
+    background-attachment: fixed;
+    background-position: center;
+    font-family: 'Comic Sans MS', 'Fira-sans', sans-serif;
+}
+
+/* Navbar Styling */
+nav {
+    background-color: #98FF98; /* Mint green color */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+nav h1 {
+    font-size: 1.8rem;
+    color: #000000; /* Black color */
+}
+
+.nav-link {
+    padding: 8px 16px;
+    border-radius: 20px;
+    color: #666;
+}
+
+.nav-link:hover {
+    background: #FFE5E5;
+}
+
+/* Announcement Bar */
+.bg-yellow-100 {
+    background-color: #FFF4BD;
+    border: 2px solid #FFE5A3;
+}
+
+/* Video Cards */
+.rounded-xl {
+    border-radius: 20px;
+    border: 3px solid #B5EAD7;
+    background: rgba(255, 255, 255, 0.95);
+}
+
+/* Game Section */
+.border {
+    border-color: #FFE5A3 !important;
+}
+
+.bg-blue-500 {
+    background-color: #B5EAD7 !important;
+}
+
+.bg-green-500 {
+    background-color: #FFB5B5 !important;
+}
+
+.bg-purple-500 {
+    background-color: #E2D1F9 !important;
+}
+
+/* Upload Section */
+#upload {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    padding: 25px;
+    border: 3px solid #B5EAD7;
+}
+
+.submit {
+    background-color: #FFB5B5 !important;
+    border-radius: 25px !important;
+    font-size: 1.1rem !important;
+}
+
+/* Input Fields */
+input[type="text"] {
+    border: 2px solid #B5EAD7 !important;
+    border-radius: 15px !important;
+}
+
+input[type="text"]:focus {
+    border-color: #FFB5B5 !important;
+    box-shadow: 0 0 5px rgba(255, 181, 181, 0.2) !important;
+}

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Choose Role</title>
+    <link rel="stylesheet" href="css/styleindex.css">
+    <script>
+        function login(role) {
+            // Store the role in localStorage (you could use sessions or a more secure method in a real app)
+            localStorage.setItem('role', role);
+            if (role === 'loginjournalist') {
+                window.location.href = '/loginjournalist';  // Redirect to journalist dashboard
+            } else if (role === 'loginuser') {
+                window.location.href = '/loginuser';  // Redirect to user dashboard
+            }
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <h1>Welcome to Young Journalists Platform</h1>
+    </header>
+    <main>
+        <h2>Please choose your role</h2>
+        <div class="login-options">
+            <button onclick="login('loginjournalist')">Journalist</button>
+            <button onclick="login('loginuser')">User</button>
+        </div>
+    </main>
+</body>
+</html>

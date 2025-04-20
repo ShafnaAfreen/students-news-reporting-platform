@@ -1,0 +1,226 @@
+/* Reset some default styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Roboto', Arial, sans-serif;
+    background-color: #fff;
+    color: #030303;
+    line-height: 1.6;
+    font-size: 16px;
+}
+
+/* Announcement Bar */
+.announcement-bar {
+    background-color: #3d1212; /* YouTube red */
+    color: white;
+    text-align: center;
+    padding: 10px 15px;
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+}
+
+/* Header */
+header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 30px;
+    border-bottom: 1px solid #e3e3e3;
+    background-color: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+header h1 {
+    font-weight: 500;
+    font-size: 24px;
+    color: #202020;
+}
+
+nav a {
+    color: #606060;
+    text-decoration: none;
+    margin-left: 20px;
+    font-weight: 500;
+    font-size: 14px;
+    transition: color 0.3s ease;
+}
+
+nav a:first-child {
+    margin-left: 0;
+}
+
+nav a:hover,
+nav a:focus {
+    color: #6e0c0c; /* YouTube red */
+}
+
+/* Main Content */
+main {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+.video-list h2 {
+    font-size: 22px;
+    font-weight: 500;
+    margin-bottom: 20px;
+    color: #202020;
+}
+
+/* Video Gallery Grid */
+.video-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 25px;
+}
+
+/* Individual Video Item */
+.video-item {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.1);
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.3s ease;
+}
+
+.video-item:hover {
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
+}
+
+/* Video Player */
+.video-item video {
+    width: 100%;
+    border-radius: 6px;
+    background-color: black;
+    outline: none;
+}
+
+/* Video Title */
+.video-item h4 {
+    margin: 12px 0 6px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #030303;
+}
+
+/* Uploader Info */
+.video-item p {
+    font-size: 14px;
+    color: #606060;
+    margin-bottom: 6px;
+}
+
+.profile-link a {
+    color: #065fd4;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.profile-link a:hover,
+.profile-link a:focus {
+    text-decoration: underline;
+}
+
+/* Feedback Section */
+.feedback-section {
+    margin: 10px 0;
+}
+
+.feedback-section button {
+    background-color: transparent;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    margin-right: 15px;
+    color: #606060;
+    transition: color 0.3s ease;
+    padding: 6px 10px;
+    border-radius: 4px;
+    user-select: none;
+}
+
+.feedback-section button:hover,
+.feedback-section button:focus {
+    color: #3f1313;
+    outline: none;
+    background-color: rgba(255, 0, 0, 0.1);
+}
+
+/* Comment Box */
+.comment-box {
+    width: 100%;
+    resize: vertical;
+    min-height: 60px;
+    max-height: 150px;
+    padding: 10px 12px;
+    font-size: 14px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: inherit;
+    margin-bottom: 10px;
+    transition: border-color 0.3s ease;
+}
+
+.comment-box:focus {
+    border-color: #471616;
+    outline: none;
+}
+
+/* Submit Feedback Button */
+.submit-feedback {
+    align-self: flex-start;
+    background-color: #340f0f;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.submit-feedback:hover,
+.submit-feedback:focus {
+    background-color: #361414;
+    outline: none;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 20px 10px;
+    font-size: 14px;
+    color: #606060;
+    border-top: 1px solid #e3e3e3;
+    margin-top: 40px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    nav {
+        margin-top: 10px;
+    }
+
+    nav a {
+        margin-left: 0;
+        margin-right: 15px;
+    }
+}

@@ -1,0 +1,145 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-image: url('../stars');
+    background-size: cover;
+    background-attachment: fixed;
+    color: #333;
+}
+
+.announcement-bar {
+    background: linear-gradient(90deg, #FF6B6B, #4ECDC4);
+    color: white;
+    text-align: center;
+    padding: 12px;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+header {
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(5px);
+    border-bottom: 3px solid #FFD93D;
+    padding: 15px 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.video-card {
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 20px;
+    border-radius: 15px;
+    border: 3px solid #4ECDC4;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.video-card:hover {
+    transform: translateY(-5px);
+}
+
+.actions button {
+    background: #FF6B6B;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 20px;
+    margin-right: 10px;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.3s;
+}
+
+.actions button:hover {
+    background: #FF8787;
+    transform: scale(1.05);
+}
+
+.video-info a {
+    color: #FF6B6B;
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 15px;
+    transition: color 0.3s;
+}
+
+.video-info a:hover {
+    color: #FF8787;
+}
+
+textarea {
+    border: 2px solid #4ECDC4;
+    border-radius: 12px;
+    padding: 10px;
+    transition: border-color 0.3s;
+}
+
+textarea:focus {
+    border-color: #FF6B6B;
+    outline: none;
+}
+
+video {
+  width: 100%;
+  border-radius: 8px;
+}
+
+.video-info {
+  margin-top: 10px;
+}
+
+.video-info h4 {
+  font-size: 18px;
+  color: #111;
+}
+
+.video-info p {
+  color: #666;
+  margin: 4px 0;
+}
+
+.video-info a {
+  color: #3a186d;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.actions {
+  margin: 10px 0;
+}
+
+.actions button {
+  background: #eee;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  margin-right: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.actions button:hover {
+  background: #ffdddd;
+}
+
+textarea {
+  width: 100%;
+  border-radius: 6px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  resize: vertical;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+footer {
+  text-align: center;
+  padding: 20px;
+  color: #888;
+  font-size: 14px;
+  margin-top: 40px;
+}

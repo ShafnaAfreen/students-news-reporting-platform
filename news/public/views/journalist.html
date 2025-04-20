@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Journalist Dashboard - Young Journalists</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Comic Sans MS', 'Poppins', sans-serif;
+            background-image: url('../jor.png');
+            background-size: contain;
+            background-repeat: repeat;
+            background-attachment: fixed;
+            background-position: center;
+        }
+
+        .bg-white {
+            background: rgba(255, 255, 255, 0.95) !important;
+            border: 3px solid #B5EAD7;
+            border-radius: 20px !important;
+        }
+
+        .shadow-lg {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        nav {
+            background: rgba(255, 255, 255, 0.98) !important;
+        }
+
+        .text-blue-600 {
+            color: #FFB5B5 !important;
+        }
+
+        .bg-blue-100 {
+            background-color: #FFE5E5 !important;
+        }
+
+        .hover\:bg-blue-200:hover {
+            background-color: #FFB5B5 !important;
+        }
+
+        .bg-blue-500 {
+            background-color: #FFB5B5 !important;
+        }
+
+        .hover\:bg-blue-600:hover {
+            background-color: #FFE5E5 !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-semibold text-blue-600">Young Journalists</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="journalistName" class="text-gray-700"></span>
+                    <button id="logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition duration-200">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Welcome Section -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h1 class="text-2xl font-semibold text-gray-800 mb-2">Welcome, <span id="welcomeName"></span>!</h1>
+            <p class="text-gray-600">Manage your articles and profile from your dashboard.</p>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Total Articles</h3>
+                <p id="totalArticles" class="text-3xl font-bold text-blue-600">0</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Published Articles</h3>
+                <p id="publishedArticles" class="text-3xl font-bold text-green-600">0</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Draft Articles</h3>
+                <p id="draftArticles" class="text-3xl font-bold text-yellow-600">0</p>
+            </div>
+        </div>
+
+        <!-- Today's Videos Section -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Today's Uploaded Videos</h2>
+            <div id="video-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Videos will be loaded here dynamically -->
+            </div>
+        </div>
+
+        <!-- Recent Articles Section -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Recent Articles</h2>
+            <div id="recentArticles" class="space-y-4">
+                <!-- Articles will be loaded here dynamically -->
+                <p class="text-gray-600 text-center py-4">No articles yet. Start writing your first article!</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs, Timestamp, orderBy, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyC2lO2AyIpEKgjoj5CQuj8UMdPjGliaX24",
+            authDomain: "news-bd220.firebaseapp.com",
+            projectId: "news-bd220",
+            storageBucket: "news-bd220.firebasestorage.app",
+            messagingSenderId: "525183379799",
+            appId: "1:525183379799:web:388bb092f0e2ef11943612",
+            measurementId: "G-XYVYNB6C63"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Make Firebase functions available globally
+        window.updateVideoLikes = async (videoId) => {
+            try {
+                const videoRef = doc(db, 'videos', videoId);
+                const videoDoc = await getDoc(videoRef);
+                
+                if (!videoDoc.exists()) {
+                    throw new Error('Video not found');
+                }
+
+                const videoData = videoDoc.data();
+                const likes = videoData.likes || 0;
+                
+                await updateDoc(videoRef, {
+                    likes: likes + 1
+                });
+                
+                return likes + 1;
+            } catch (error) {
+                console.error('Error updating likes:', error);
+                throw error;
+            }
+        };
+
+        window.addCommentToVideo = async (videoId, comment) => {
+            try {
+                const videoRef = doc(db, 'videos', videoId);
+                const videoDoc = await getDoc(videoRef);
+                
+                if (!videoDoc.exists()) {
+                    throw new Error('Video not found');
+                }
+
+                const videoData = videoDoc.data();
+                const comments = videoData.comments || [];
+                
+                await updateDoc(videoRef, {
+                    comments: [...comments, comment]
+                });
+                
+                return [...comments, comment];
+            } catch (error) {
+                console.error('Error adding comment:', error);
+                throw error;
+            }
+        };
+
+        window.getUserProfile = async (userId) => {
+            try {
+                const userRef = doc(db, 'users', userId);
+                const userDoc = await getDoc(userRef);
+                
+                if (!userDoc.exists()) {
+                    return null;
+                }
+                
+                return userDoc.data();
+            } catch (error) {
+                console.error('Error getting user profile:', error);
+                throw error;
+            }
+        };
+
+        // Function to get today's videos
+        async function getTodayVideos() {
+            try {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                const videosRef = collection(db, 'videos');
+                const q = query(
+                    videosRef,
+                    where('timestamp', '>=', Timestamp.fromDate(today)),
+                    orderBy('timestamp', 'desc')
+                );
+                
+                return await getDocs(q);
+            } catch (error) {
+                console.error('Error getting today\'s videos:', error);
+                throw error;
+            }
+        }
+
+        // Function to load today's videos
+        async function loadTodayVideos() {
+            const container = document.getElementById('video-container');
+            container.innerHTML = '';
+
+            try {
+                console.log('Fetching today\'s videos');
+                const querySnapshot = await getTodayVideos();
+
+                if (querySnapshot.empty) {
+                    container.innerHTML = '<p class="text-gray-600">No videos uploaded today!</p>';
+                    return;
+                }
+
+                for (const doc of querySnapshot.docs) {
+                    const video = doc.data();
+                    const videoId = doc.id;
+                    
+                    // Get user info for the video uploader
+                    let uploaderName = 'Unknown User';
+                    try {
+                        const userProfile = await getUserProfile(video.userId);
+                        if (userProfile) {
+                            uploaderName = `${userProfile.firstname} ${userProfile.lastname}`;
+                        }
+                    } catch (error) {
+                        console.error('Error fetching user profile:', error);
+                    }
+                    
+                    // Format comments with user names
+                    let commentsHTML = '<li>No comments yet</li>';
+                    if (video.comments && video.comments.length > 0) {
+                        commentsHTML = video.comments.map(c => {
+                            const commentText = typeof c === 'object' ? c.text : c;
+                            const commentUser = typeof c === 'object' && c.userName ? c.userName : 'Anonymous';
+                            return `<li><strong>${commentUser}:</strong> ${commentText}</li>`;
+                        }).join('');
+                    }
+                    
+                    container.innerHTML += `
+                        <div class="border p-4 rounded shadow bg-white">
+                            <h3 class="font-semibold text-lg mb-2">${video.title}</h3>
+                            <p class="text-sm text-gray-600 mb-2">Uploaded by: <span class="font-medium">${uploaderName}</span></p>
+                            <div class="max-w-md mx-auto">
+                                <video src="${video.videoUrl}" controls class="w-full h-48 object-cover rounded"></video>
+                            </div>
+                            <div class="flex items-center gap-2 text-gray-600 mt-2">
+                                <button onclick="handleLike('${videoId}')" class="like-btn flex items-center gap-1 px-3 py-1 bg-blue-100 rounded-full hover:bg-blue-200 transition-colors">
+                                    <span>👍</span>
+                                    <span class="like-count">${video.likes || 0}</span>
+                                </button>
+                                <span class="text-sm">${new Date(video.timestamp.toDate()).toLocaleTimeString()}</span>
+                            </div>
+                            <div class="mt-4">
+                                <p class="font-semibold text-sm mb-2">Comments:</p>
+                                <ul class="list-disc ml-5 text-sm text-gray-700 mb-3">${commentsHTML}</ul>
+                                <div class="comment-form">
+                                    <input type="text" 
+                                           id="comment-${videoId}" 
+                                           placeholder="Add a comment..." 
+                                           class="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <button onclick="handleComment('${videoId}')" 
+                                            class="mt-2 px-4 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 transition-colors">
+                                        Comment
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                console.error('Error loading today\'s videos:', err);
+                container.innerHTML = '<p class="text-red-600">Failed to load videos. Please try again later.</p>';
+            }
+        }
+
+        // Add like and comment handlers
+        window.handleLike = async (videoId) => {
+            try {
+                const newLikeCount = await window.updateVideoLikes(videoId);
+                const likeCountElement = document.querySelector(`[onclick="handleLike('${videoId}')"] .like-count`);
+                if (likeCountElement) {
+                    likeCountElement.textContent = newLikeCount;
+                }
+            } catch (error) {
+                console.error('Error handling like:', error);
+                alert('Failed to update like. Please try again.');
+            }
+        };
+
+        window.handleComment = async (videoId) => {
+            try {
+                const commentInput = document.getElementById(`comment-${videoId}`);
+                const comment = commentInput.value.trim();
+                
+                if (!comment) {
+                    alert('Please enter a comment');
+                    return;
+                }
+
+                // Get the current user from Firebase Auth
+                const currentUser = auth.currentUser;
+                if (!currentUser) {
+                    alert('Please login to comment');
+                    return;
+                }
+
+                // Get journalist profile from Firestore
+                const journalistDoc = await getDoc(doc(db, "journalists", currentUser.uid));
+                if (!journalistDoc.exists()) {
+                    alert('Journalist profile not found');
+                    return;
+                }
+
+                const journalistData = journalistDoc.data();
+                const userName = `${journalistData.firstname} ${journalistData.lastname}`;
+                
+                const commentWithUser = {
+                    text: comment,
+                    userId: currentUser.uid,
+                    userName: userName,
+                    timestamp: new Date()
+                };
+                
+                await window.addCommentToVideo(videoId, commentWithUser);
+                commentInput.value = '';
+                loadTodayVideos(); // Reload to show new comment
+            } catch (error) {
+                console.error('Error handling comment:', error);
+                alert('Failed to add comment. Please try again.');
+            }
+        };
+
+        // Check authentication state
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // User is signed in
+                const journalistDoc = await getDoc(doc(db, "journalists", user.uid));
+                if (journalistDoc.exists()) {
+                    const journalistData = journalistDoc.data();
+                    document.getElementById('journalistName').textContent = `${journalistData.firstname} ${journalistData.lastname}`;
+                    document.getElementById('welcomeName').textContent = journalistData.firstname;
+                    // Load today's videos after confirming authentication
+                    loadTodayVideos();
+                }
+            } else {
+                // User is signed out, redirect to login
+                window.location.href = '/loginjournalist';
+            }
+        });
+
+        // Logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                window.location.href = '/loginjournalist';
+            } catch (error) {
+                console.error('Error signing out:', error);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="../css/user-styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Portal – Young Journalists</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Cloudinary Upload Widget -->
+  <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, getDoc, doc, updateDoc, orderBy, Timestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, getAdditionalUserInfo } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyC2lO2AyIpEKgjoj5CQuj8UMdPjGliaX24",
+      authDomain: "news-bd220.firebaseapp.com",
+      projectId: "news-bd220",
+      storageBucket: "news-bd220.firebasestorage.app",
+      messagingSenderId: "525183379799",
+      appId: "1:525183379799:web:388bb092f0e2ef11943612",
+      measurementId: "G-XYVYNB6C63"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Make Firebase instances and functions available globally
+    window.db = db;
+    window.auth = auth;
+    window.addVideoToFirestore = async (videoData) => {
+      try {
+        const docRef = await addDoc(collection(db, 'videos'), videoData);
+        return docRef.id;
+      } catch (error) {
+        console.error('Error adding video:', error);
+        throw error;
+      }
+    };
+    window.getUserVideos = async (userId) => {
+      try {
+        const videosRef = collection(db, 'videos');
+        const q = query(videosRef, where('userId', '==', userId));
+        return await getDocs(q);
+      } catch (error) {
+        console.error('Error getting videos:', error);
+        throw error;
+      }
+    };
+    window.updateVideoLikes = async (videoId, userId) => {
+      try {
+        const videoRef = doc(db, 'videos', videoId);
+        const videoDoc = await getDoc(videoRef);
+        
+        if (!videoDoc.exists()) {
+          throw new Error('Video not found');
+        }
+
+        const videoData = videoDoc.data();
+        const likes = videoData.likes || 0;
+        
+        await updateDoc(videoRef, {
+          likes: likes + 1
+        });
+        
+        return likes + 1;
+      } catch (error) {
+        console.error('Error updating likes:', error);
+        throw error;
+      }
+    };
+    window.addCommentToVideo = async (videoId, comment) => {
+      try {
+        const videoRef = doc(db, 'videos', videoId);
+        const videoDoc = await getDoc(videoRef);
+        
+        if (!videoDoc.exists()) {
+          throw new Error('Video not found');
+        }
+
+        const videoData = videoDoc.data();
+        const comments = videoData.comments || [];
+        
+        await updateDoc(videoRef, {
+          comments: [...comments, comment]
+        });
+        
+        return [...comments, comment];
+      } catch (error) {
+        console.error('Error adding comment:', error);
+        throw error;
+      }
+    };
+    window.getTodayVideos = async () => {
+      try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const videosRef = collection(db, 'videos');
+        const q = query(
+          videosRef,
+          where('timestamp', '>=', Timestamp.fromDate(today)),
+          orderBy('timestamp', 'desc')
+        );
+        
+        return await getDocs(q);
+      } catch (error) {
+        console.error('Error getting today\'s videos:', error);
+        throw error;
+      }
+    };
+    window.getUserProfile = async (userId) => {
+      try {
+        const userRef = doc(db, 'users', userId);
+        const userDoc = await getDoc(userRef);
+        
+        if (!userDoc.exists()) {
+          return null;
+        }
+        
+        return userDoc.data();
+      } catch (error) {
+        console.error('Error getting user profile:', error);
+        throw error;
+      }
+    };
+    window.getUserVideoCount = async (userId) => {
+      try {
+        const videosRef = collection(db, 'videos');
+        const q = query(videosRef, where('userId', '==', userId));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.size;
+      } catch (error) {
+        console.error('Error getting video count:', error);
+        throw error;
+      }
+    };
+    window.getUserStats = async (userId) => {
+      try {
+        const videosRef = collection(db, 'videos');
+        const q = query(videosRef, where('userId', '==', userId));
+        const querySnapshot = await getDocs(q);
+        
+        let totalVideos = 0;
+        let totalLikes = 0;
+        let totalComments = 0;
+        
+        querySnapshot.forEach(doc => {
+          const video = doc.data();
+          totalVideos++;
+          totalLikes += video.likes || 0;
+          totalComments += (video.comments || []).length;
+        });
+        
+        return {
+          totalVideos,
+          totalLikes,
+          totalComments
+        };
+      } catch (error) {
+        console.error('Error getting user stats:', error);
+        throw error;
+      }
+    };
+
+    // Function to delete all videos
+    window.deleteAllVideos = async () => {
+      try {
+        const videosRef = collection(db, 'videos');
+        const querySnapshot = await getDocs(videosRef);
+        
+        const deletePromises = querySnapshot.docs.map(doc => {
+          return deleteDoc(doc.ref);
+        });
+        
+        await Promise.all(deletePromises);
+        console.log(`Successfully deleted ${querySnapshot.size} videos`);
+        return querySnapshot.size;
+      } catch (error) {
+        console.error('Error deleting videos:', error);
+        throw error;
+      }
+    };
+
+    // Check authentication state
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log('User is signed in:', user.uid);
+        localStorage.setItem('loggedInUserId', user.uid);
+      } else {
+        console.log('No user is signed in');
+        localStorage.removeItem('loggedInUserId');
+      }
+    });
+  </script>
+  
+
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+  <!-- Navbar -->
+  <nav class=" text-white p-4 flex justify-between items-center">
+    <h1 class="font-bold text-lg">Young Journalists</h1>
+    <ul class="flex gap-4 font-medium">
+      <li><a href="#home" class="nav-link text-black hover:underline">Home</a></li>
+      <li><a href="#my-videos" class="nav-link hover:underline">My Videos</a></li>
+      <li><a href="#profile" class="nav-link hover:underline">Profile</a></li>
+      <li><a href="#upload" class="nav-link hover:underline">Upload</a></li>
+    </ul>
+  </nav>
+
+  <!-- Sections -->
+  <main class="p-4">
+    <!-- Home -->
+    <section id="home">
+      <div class="bg-yellow-100 p-2 rounded mb-4">📢 Announcement: Submit your video by April 25!</div>
+      <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Today's Uploaded Videos</h2>
+        <div id="video-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Videos will be loaded here dynamically -->
+        </div>
+      </div>
+
+      <!-- Interactive Games Section -->
+      <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Interactive Games</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- News Quiz Game -->
+          <div class="border p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <h3 class="font-semibold text-lg mb-2">News Quiz</h3>
+            <p class="text-gray-600 text-sm mb-4">Test your knowledge with daily news quizzes!</p>
+            <button id="startQuizBtn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-200 w-full">
+              Start Quiz
+            </button>
+          </div>
+          
+          <!-- Word Scramble -->
+          <div class="border p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <h3 class="font-semibold text-lg mb-2">Word Scramble</h3>
+            <p class="text-gray-600 text-sm mb-4">Unscramble news-related words!</p>
+            <button id="startScrambleBtn" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition duration-200 w-full">
+              Play Now
+            </button>
+          </div>
+          
+          <!-- Memory Match -->
+          <div class="border p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <h3 class="font-semibold text-lg mb-2">Memory Match</h3>
+            <p class="text-gray-600 text-sm mb-4">Match news headlines with their images!</p>
+            <button id="startMemoryBtn" class="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition duration-200 w-full">
+              Play Now
+            </button>
+          </div>
+        </div>
+        
+        <!-- Game Containers (Hidden by default) -->
+        <div id="quizContainer" class="hidden mt-6 p-4 border rounded-lg">
+          <h3 class="font-semibold text-lg mb-4">Daily News Quiz</h3>
+          <div id="quizQuestions" class="space-y-4">
+            <!-- Questions will be loaded here -->
+          </div>
+          <div class="mt-4 flex justify-between">
+            <button id="prevQuestionBtn" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition duration-200">
+              Previous
+            </button>
+            <button id="nextQuestionBtn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-200">
+              Next
+            </button>
+          </div>
+          <div id="quizResults" class="hidden mt-4 p-4 bg-green-100 rounded-lg">
+            <h4 class="font-semibold text-green-800">Quiz Complete!</h4>
+            <p class="text-green-700">Your score: <span id="quizScore">0</span>/<span id="totalQuestions">0</span></p>
+            <button id="restartQuizBtn" class="mt-2 bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition duration-200">
+              Try Again
+            </button>
+          </div>
+        </div>
+        
+        <div id="scrambleContainer" class="hidden mt-6 p-4 border rounded-lg">
+          <h3 class="font-semibold text-lg mb-4">Word Scramble</h3>
+          <div class="text-center mb-4">
+            <p class="text-xl font-bold" id="scrambledWord">Loading...</p>
+          </div>
+          <div class="flex justify-center mb-4">
+            <input type="text" id="scrambleAnswer" class="w-full max-w-md px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your answer">
+          </div>
+          <div class="flex justify-center">
+            <button id="checkScrambleBtn" class="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600 transition duration-200">
+              Check Answer
+            </button>
+          </div>
+          <div class="mt-4 text-center">
+            <p>Score: <span id="scrambleScore">0</span></p>
+            <p>Words solved: <span id="wordsSolved">0</span>/<span id="totalWords">0</span></p>
+          </div>
+        </div>
+        
+        <div id="memoryContainer" class="hidden mt-6 p-4 border rounded-lg">
+          <h3 class="font-semibold text-lg mb-4">Memory Match</h3>
+          <div id="memoryGrid" class="grid grid-cols-4 gap-2">
+            <!-- Memory cards will be loaded here -->
+          </div>
+          <div class="mt-4 text-center">
+            <p>Moves: <span id="memoryMoves">0</span></p>
+            <p>Matches: <span id="memoryMatches">0</span>/<span id="totalPairs">0</span></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- My Videos -->
+    <section id="my-videos" class="hidden">
+      <h2 class="text-xl font-semibold mb-2">My Uploaded Videos</h2>
+      <div id="my-videos-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Fetched videos will appear here -->
+      </div>
+    </section>
+
+    <!-- Profile -->
+    <section id="profile" class="hidden">
+      <h2 class="text-xl font-semibold mb-2">My Profile</h2>
+      <div id="profile-content">
+        <!-- Profile content will be loaded here -->
+      </div>
+    </section>
+
+    <!-- Upload -->
+    <div id="upload" class="p-4 hidden">
+      <h2 class="text-xl font-semibold mb-4">Upload Video</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm text-gray-700">Video Title</label>
+          <input type="text" id="videoTitle" required 
+                 class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"/>
+        </div>
+        <button id="upload_widget" class="submit">Select Video</button>
+        <div id="uploadStatus" class="mt-4"></div>
+      </div>
+    </div>
+  </main>
+  
+  <!-- Script -->
+  <script>
+    
+    const sections = ['home', 'my-videos', 'profile', 'upload'];
+
+    function showSection(sectionId) {
+      sections.forEach(id => {
+        document.getElementById(id).classList.toggle('hidden', id !== sectionId);
+      });
+
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('underline');
+        if (link.getAttribute('href') === '#' + sectionId) {
+          link.classList.add('underline');
+        }
+      });
+
+      // Load appropriate content based on section
+      if (sectionId === 'my-videos') {
+        loadVideos();
+      } else if (sectionId === 'home') {
+        loadTodayVideos();
+      } else if (sectionId === 'profile') {
+        loadProfile();
+      }
+    }
+
+    // Handle nav clicks
+    document.querySelectorAll('nav a').forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        const target = e.target.getAttribute('href').substring(1);
+        showSection(target);
+      });
+    });
+
+    // Initialize Cloudinary Upload Widget
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const response = await fetch('/api/signuploadwidget');
+        const data = await response.json();
+      
+        const options = {
+          cloudName: data.cloudname,
+          apiKey: data.apikey,
+          uploadSignatureTimestamp: data.timestamp,
+          uploadSignature: data.signature,
+          cropping: false,
+          folder: 'signed_upload_demo_uw',
+          resourceType: 'video'
+        };
+      
+        const processResults = async (error, result) => {
+          if (!error && result && result.event === 'success') {
+            const videoTitle = document.getElementById('videoTitle').value;
+            const userId = localStorage.getItem('loggedInUserId');
+            
+            if (!videoTitle) {
+              alert('Please enter a video title');
+              return;
+            }
+            
+            if (!userId) {
+              alert('Please login first');
+              return;
+            }
+
+            try {
+              console.log('Cloudinary upload successful:', result.info.secure_url);
+              const videoData = {
+                userId: userId,
+                title: videoTitle,
+                videoUrl: result.info.secure_url,
+                timestamp: new Date(),
+                likes: 0,
+                comments: []
+              };
+              
+              console.log('Preparing to save video data:', videoData);
+              const docId = await window.addVideoToFirestore(videoData);
+              console.log('Video saved to Firestore with ID:', docId);
+              document.getElementById('uploadStatus').innerHTML = 'Video uploaded successfully!';
+              document.getElementById('videoTitle').value = '';
+              loadVideos();
+            } catch (error) {
+              console.error('Error saving video:', error);
+              document.getElementById('uploadStatus').innerHTML = `Error saving video: ${error.message}`;
+            }
+          } else if (error) {
+            console.error('Upload error:', error);
+            document.getElementById('uploadStatus').innerHTML = 'Error uploading video. Please try again.';
+          }
+        };
+      
+        const myWidget = window.cloudinary.createUploadWidget(
+          options,
+          processResults
+        );
+        
+        document.getElementById('upload_widget').addEventListener('click', () => {
+          const videoTitle = document.getElementById('videoTitle').value;
+          if (!videoTitle) {
+            alert('Please enter a video title first');
+            return;
+          }
+          myWidget.open();
+        }, false);
+      } catch (error) {
+        console.error('Error initializing upload widget:', error);
+        document.getElementById('uploadStatus').innerHTML = 'Error initializing upload widget. Please try again.';
+      }
+    });
+
+    // Update loadVideos function
+    async function loadVideos() {
+      const container = document.getElementById('my-videos-container');
+      container.innerHTML = '';
+
+      try {
+        const userId = localStorage.getItem('loggedInUserId');
+        if (!userId) {
+          container.innerHTML = '<p class="text-red-600">Please login to view your videos.</p>';
+          return;
+        }
+
+        console.log('Fetching videos for user:', userId);
+        const querySnapshot = await window.getUserVideos(userId);
+
+        if (querySnapshot.empty) {
+          container.innerHTML = '<p class="text-gray-600">No videos uploaded yet!</p>';
+          return;
+        }
+
+        for (const doc of querySnapshot.docs) {
+          const video = doc.data();
+          const videoId = doc.id;
+          
+          // Get user info for the video uploader
+          let uploaderName = 'Unknown User';
+          try {
+            const userProfile = await window.getUserProfile(video.userId);
+            if (userProfile) {
+              uploaderName = `${userProfile.firstname} ${userProfile.lastname}`;
+            }
+          } catch (error) {
+            console.error('Error fetching user profile:', error);
+          }
+          
+          // Format comments with user names
+          let commentsHTML = '<li>No comments yet</li>';
+          if (video.comments && video.comments.length > 0) {
+            commentsHTML = video.comments.map(c => {
+              const commentText = typeof c === 'object' ? c.text : c;
+              const commentUser = typeof c === 'object' && c.userName ? c.userName : 'Anonymous';
+              return `<li><strong>${commentUser}:</strong> ${commentText}</li>`;
+            }).join('');
+          }
+          
+          container.innerHTML += `
+            <div class="border p-4 rounded shadow bg-white">
+              <h3 class="font-semibold text-lg mb-2">${video.title}</h3>
+              <p class="text-sm text-gray-600 mb-2">Uploaded by: <span class="font-medium">${uploaderName}</span></p>
+              <div class="max-w-md mx-auto">
+                <video src="${video.videoUrl}" controls class="w-full h-48 object-cover rounded"></video>
+              </div>
+              <div class="flex items-center gap-2 text-gray-600 mt-2">
+                <button onclick="handleLike('${videoId}')" class="like-btn flex items-center gap-1 px-3 py-1 bg-blue-100 rounded-full hover:bg-blue-200 transition-colors">
+                  <span>👍</span>
+                  <span class="like-count">${video.likes || 0}</span>
+                </button>
+                <span class="text-sm">${new Date(video.timestamp.toDate()).toLocaleDateString()}</span>
+              </div>
+              <div class="mt-4">
+                <p class="font-semibold text-sm mb-2">Comments:</p>
+                <ul class="list-disc ml-5 text-sm text-gray-700 mb-3">${commentsHTML}</ul>
+                <div class="comment-form">
+                  <input type="text" 
+                         id="comment-${videoId}" 
+                         placeholder="Add a comment..." 
+                         class="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <button onclick="handleComment('${videoId}')" 
+                          class="mt-2 px-4 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 transition-colors">
+                    Comment
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.error('Error loading videos:', err);
+        container.innerHTML = '<p class="text-red-600">Failed to load videos. Please try again later.</p>';
+      }
+    }
+
+    // Add like and comment handlers
+    window.handleLike = async (videoId) => {
+      try {
+        const newLikeCount = await window.updateVideoLikes(videoId);
+        const likeCountElement = document.querySelector(`[onclick="handleLike('${videoId}')"] .like-count`);
+        if (likeCountElement) {
+          likeCountElement.textContent = newLikeCount;
+        }
+      } catch (error) {
+        console.error('Error handling like:', error);
+        alert('Failed to update like. Please try again.');
+      }
+    };
+
+    window.handleComment = async (videoId) => {
+      try {
+        const commentInput = document.getElementById(`comment-${videoId}`);
+        const comment = commentInput.value.trim();
+        
+        if (!comment) {
+          alert('Please enter a comment');
+          return;
+        }
+
+        const userId = localStorage.getItem('loggedInUserId');
+        const userProfile = await window.getUserProfile(userId);
+        const userName = userProfile ? `${userProfile.firstname} ${userProfile.lastname}` : 'Anonymous';
+        
+        const commentWithUser = {
+          text: comment,
+          userId: userId,
+          userName: userName,
+          timestamp: new Date()
+        };
+        
+        await window.addCommentToVideo(videoId, commentWithUser);
+        commentInput.value = '';
+        loadVideos(); // Reload to show new comment
+      } catch (error) {
+        console.error('Error handling comment:', error);
+        alert('Failed to add comment. Please try again.');
+      }
+    };
+
+    // Add loadTodayVideos function
+    async function loadTodayVideos() {
+      const container = document.getElementById('video-container');
+      container.innerHTML = '';
+
+      try {
+        console.log('Fetching today\'s videos');
+        const querySnapshot = await window.getTodayVideos();
+
+        if (querySnapshot.empty) {
+          container.innerHTML = '<p class="text-gray-600">No videos uploaded today!</p>';
+          return;
+        }
+
+        for (const doc of querySnapshot.docs) {
+          const video = doc.data();
+          const videoId = doc.id;
+          
+          // Get user info for the video uploader
+          let uploaderName = 'Unknown User';
+          try {
+            const userProfile = await window.getUserProfile(video.userId);
+            if (userProfile) {
+              uploaderName = `${userProfile.firstname} ${userProfile.lastname}`;
+            }
+          } catch (error) {
+            console.error('Error fetching user profile:', error);
+          }
+          
+          // Format comments with user names
+          let commentsHTML = '<li>No comments yet</li>';
+          if (video.comments && video.comments.length > 0) {
+            commentsHTML = video.comments.map(c => {
+              const commentText = typeof c === 'object' ? c.text : c;
+              const commentUser = typeof c === 'object' && c.userName ? c.userName : 'Anonymous';
+              return `<li><strong>${commentUser}:</strong> ${commentText}</li>`;
+            }).join('');
+          }
+          
+          container.innerHTML += `
+            <div class="border p-4 rounded shadow bg-white">
+              <h3 class="font-semibold text-lg mb-2">${video.title}</h3>
+              <p class="text-sm text-gray-600 mb-2">Uploaded by: <span class="font-medium">${uploaderName}</span></p>
+              <div class="max-w-md mx-auto">
+                <video src="${video.videoUrl}" controls class="w-full h-48 object-cover rounded"></video>
+              </div>
+              <div class="flex items-center gap-2 text-gray-600 mt-2">
+                <button onclick="handleLike('${videoId}')" class="like-btn flex items-center gap-1 px-3 py-1 bg-blue-100 rounded-full hover:bg-blue-200 transition-colors">
+                  <span>👍</span>
+                  <span class="like-count">${video.likes || 0}</span>
+                </button>
+                <span class="text-sm">${new Date(video.timestamp.toDate()).toLocaleTimeString()}</span>
+              </div>
+              <div class="mt-4">
+                <p class="font-semibold text-sm mb-2">Comments:</p>
+                <ul class="list-disc ml-5 text-sm text-gray-700 mb-3">${commentsHTML}</ul>
+                <div class="comment-form">
+                  <input type="text" 
+                         id="comment-${videoId}" 
+                         placeholder="Add a comment..." 
+                         class="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <button onclick="handleComment('${videoId}')" 
+                          class="mt-2 px-4 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 transition-colors">
+                    Comment
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.error('Error loading today\'s videos:', err);
+        container.innerHTML = '<p class="text-red-600">Failed to load videos. Please try again later.</p>';
+      }
+    }
+
+    // Update loadProfile function
+    async function loadProfile() {
+      const container = document.getElementById('profile-content');
+      const userId = localStorage.getItem('loggedInUserId');
+      
+      if (!userId) {
+        container.innerHTML = '<p class="text-red-600">Please login to view your profile.</p>';
+        return;
+      }
+
+      try {
+        const user = auth.currentUser;
+        if (!user) {
+          container.innerHTML = '<p class="text-red-600">User not found. Please login again.</p>';
+          return;
+        }
+
+        const [profile, videoCount] = await Promise.all([
+          window.getUserProfile(userId),
+          window.getUserVideoCount(userId)
+        ]);
+
+        if (!profile) {
+          container.innerHTML = '<p class="text-red-600">Profile not found.</p>';
+          return;
+        }
+
+        container.innerHTML = `
+          <div class="max-w-2xl mx-auto">
+            <div class="bg-white rounded-lg shadow p-6">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span class="text-3xl text-blue-600">${profile.firstname ? profile.firstname[0].toUpperCase() : 'U'}</span>
+                </div>
+                <div>
+                  <h2 class="text-2xl font-bold">${profile.firstname} ${profile.lastname}</h2>
+                  <p class="text-gray-600">Date of Birth: ${profile.dob}</p>
+                  <p class="text-gray-600">Email: ${user.email}</p>
+                </div>
+              </div>
+              
+              <div class="bg-blue-50 p-4 rounded-lg text-center mb-6">
+                <p class="text-2xl font-bold text-blue-600">${videoCount}</p>
+                <p class="text-sm text-gray-600">Videos Uploaded</p>
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        container.innerHTML = '<p class="text-red-600">Failed to load profile. Please try again later.</p>';
+      }
+    }
+
+    // Games functionality
+    const newsWords = [
+      "JOURNALISM", "REPORTER", "HEADLINE", "NEWSPAPER", "INTERVIEW", 
+      "EDITOR", "ARTICLE", "BROADCAST", "ANCHOR", "PRESS", 
+      "MEDIA", "NEWS", "STORY", "COVERAGE", "SOURCE"
+    ];
+    
+    const quizQuestions = [
+      {
+        question: "What is the primary purpose of journalism?",
+        options: ["To entertain", "To inform the public", "To sell products", "To promote political views"],
+        correct: 1
+      },
+      {
+        question: "Which of these is NOT a type of news media?",
+        options: ["Newspaper", "Television", "Cookbook", "Radio"],
+        correct: 2
+      },
+      {
+        question: "What is the 'inverted pyramid' style in journalism?",
+        options: ["A type of headline", "A way to organize information with the most important details first", "A type of newspaper layout", "A method of interviewing"],
+        correct: 1
+      },
+      {
+        question: "What does 'off the record' mean in journalism?",
+        options: ["Information that cannot be published", "Information that can only be published anonymously", "Information that can be published with attribution", "Information that can be published without verification"],
+        correct: 0
+      },
+      {
+        question: "Which of these is an ethical principle of journalism?",
+        options: ["Always support the government", "Accuracy and fairness", "Maximize profits", "Avoid all controversial topics"],
+        correct: 1
+      }
+    ];
+    
+    // Quiz Game
+    let currentQuestionIndex = 0;
+    let quizScore = 0;
+    
+    document.getElementById('startQuizBtn').addEventListener('click', () => {
+      document.getElementById('quizContainer').classList.remove('hidden');
+      document.getElementById('scrambleContainer').classList.add('hidden');
+      document.getElementById('memoryContainer').classList.add('hidden');
+      loadQuizQuestion();
+    });
+    
+    function loadQuizQuestion() {
+      const question = quizQuestions[currentQuestionIndex];
+      const questionsContainer = document.getElementById('quizQuestions');
+      
+      questionsContainer.innerHTML = `
+        <div class="p-4 bg-gray-50 rounded-lg">
+          <p class="font-semibold mb-2">Question ${currentQuestionIndex + 1} of ${quizQuestions.length}</p>
+          <p class="mb-4">${question.question}</p>
+          <div class="space-y-2">
+            ${question.options.map((option, index) => `
+              <div class="flex items-center">
+                <input type="radio" id="option${index}" name="quizOption" value="${index}" class="mr-2">
+                <label for="option${index}">${option}</label>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('prevQuestionBtn').disabled = currentQuestionIndex === 0;
+      document.getElementById('nextQuestionBtn').textContent = currentQuestionIndex === quizQuestions.length - 1 ? 'Finish' : 'Next';
+    }
+    
+    document.getElementById('nextQuestionBtn').addEventListener('click', () => {
+      const selectedOption = document.querySelector('input[name="quizOption"]:checked');
+      
+      if (!selectedOption) {
+        alert('Please select an answer');
+        return;
+      }
+      
+      if (parseInt(selectedOption.value) === quizQuestions[currentQuestionIndex].correct) {
+        quizScore++;
+      }
+      
+      if (currentQuestionIndex < quizQuestions.length - 1) {
+        currentQuestionIndex++;
+        loadQuizQuestion();
+      } else {
+        showQuizResults();
+      }
+    });
+    
+    document.getElementById('prevQuestionBtn').addEventListener('click', () => {
+      if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        loadQuizQuestion();
+      }
+    });
+    
+    function showQuizResults() {
+      document.getElementById('quizQuestions').classList.add('hidden');
+      document.getElementById('quizResults').classList.remove('hidden');
+      document.getElementById('quizScore').textContent = quizScore;
+      document.getElementById('totalQuestions').textContent = quizQuestions.length;
+    }
+    
+    document.getElementById('restartQuizBtn').addEventListener('click', () => {
+      currentQuestionIndex = 0;
+      quizScore = 0;
+      document.getElementById('quizResults').classList.add('hidden');
+      document.getElementById('quizQuestions').classList.remove('hidden');
+      loadQuizQuestion();
+    });
+    
+    // Word Scramble Game
+    let currentWordIndex = 0;
+    let scrambleScore = 0;
+    let solvedWords = 0;
+    
+    document.getElementById('startScrambleBtn').addEventListener('click', () => {
+      document.getElementById('scrambleContainer').classList.remove('hidden');
+      document.getElementById('quizContainer').classList.add('hidden');
+      document.getElementById('memoryContainer').classList.add('hidden');
+      startScrambleGame();
+    });
+    
+    function startScrambleGame() {
+      currentWordIndex = 0;
+      scrambleScore = 0;
+      solvedWords = 0;
+      document.getElementById('scrambleScore').textContent = scrambleScore;
+      document.getElementById('wordsSolved').textContent = solvedWords;
+      document.getElementById('totalWords').textContent = newsWords.length;
+      loadScrambleWord();
+    }
+    
+    function loadScrambleWord() {
+      if (currentWordIndex >= newsWords.length) {
+        alert('Congratulations! You have completed all words!');
+        return;
+      }
+      
+      const word = newsWords[currentWordIndex];
+      const scrambled = scrambleWord(word);
+      document.getElementById('scrambledWord').textContent = scrambled;
+      document.getElementById('scrambleAnswer').value = '';
+    }
+    
+    function scrambleWord(word) {
+      return word.split('').sort(() => Math.random() - 0.5).join('');
+    }
+    
+    document.getElementById('checkScrambleBtn').addEventListener('click', () => {
+      const answer = document.getElementById('scrambleAnswer').value.trim().toUpperCase();
+      const correctWord = newsWords[currentWordIndex];
+      
+      if (answer === correctWord) {
+        scrambleScore += 10;
+        solvedWords++;
+        document.getElementById('scrambleScore').textContent = scrambleScore;
+        document.getElementById('wordsSolved').textContent = solvedWords;
+        alert('Correct! Well done!');
+        currentWordIndex++;
+        loadScrambleWord();
+      } else {
+        alert('Incorrect. Try again!');
+      }
+    });
+    
+    // Memory Match Game
+    let memoryCards = [];
+    let flippedCards = [];
+    let memoryMoves = 0;
+    let memoryMatches = 0;
+    
+    document.getElementById('startMemoryBtn').addEventListener('click', () => {
+      document.getElementById('memoryContainer').classList.remove('hidden');
+      document.getElementById('quizContainer').classList.add('hidden');
+      document.getElementById('scrambleContainer').classList.add('hidden');
+      startMemoryGame();
+    });
+    
+    function startMemoryGame() {
+      memoryMoves = 0;
+      memoryMatches = 0;
+      document.getElementById('memoryMoves').textContent = memoryMoves;
+      document.getElementById('memoryMatches').textContent = memoryMatches;
+      
+      // Create pairs of cards
+      const newsItems = [
+        { id: 1, title: "Breaking News", image: "https://via.placeholder.com/100?text=News" },
+        { id: 2, title: "Local Events", image: "https://via.placeholder.com/100?text=Events" },
+        { id: 3, title: "Politics", image: "https://via.placeholder.com/100?text=Politics" },
+        { id: 4, title: "Technology", image: "https://via.placeholder.com/100?text=Tech" },
+        { id: 5, title: "Sports", image: "https://via.placeholder.com/100?text=Sports" },
+        { id: 6, title: "Entertainment", image: "https://via.placeholder.com/100?text=Entertainment" }
+      ];
+      
+      memoryCards = [];
+      newsItems.forEach(item => {
+        memoryCards.push({ ...item, isFlipped: false, isMatched: false });
+        memoryCards.push({ ...item, isFlipped: false, isMatched: false });
+      });
+      
+      // Shuffle cards
+      memoryCards.sort(() => Math.random() - 0.5);
+      
+      // Render cards
+      const memoryGrid = document.getElementById('memoryGrid');
+      memoryGrid.innerHTML = '';
+      
+      memoryCards.forEach((card, index) => {
+        const cardElement = document.createElement('div');
+        cardElement.classList.add('memory-card', 'h-24', 'bg-gray-200', 'rounded', 'flex', 'items-center', 'justify-center', 'cursor-pointer', 'transition-all', 'duration-300');
+        cardElement.dataset.index = index;
+        cardElement.innerHTML = `
+          <div class="card-inner w-full h-full flex items-center justify-center">
+            <div class="card-front w-full h-full flex items-center justify-center bg-blue-500 text-white font-bold">
+              <span>?</span>
+            </div>
+            <div class="card-back w-full h-full hidden">
+              <img src="${card.image}" alt="${card.title}" class="w-full h-full object-cover">
+            </div>
+          </div>
+        `;
+        
+        cardElement.addEventListener('click', () => flipCard(index));
+        memoryGrid.appendChild(cardElement);
+      });
+      
+      document.getElementById('totalPairs').textContent = newsItems.length;
+    }
+    
+    function flipCard(index) {
+      if (flippedCards.length === 2 || memoryCards[index].isFlipped || memoryCards[index].isMatched) {
+        return;
+      }
+      
+      memoryCards[index].isFlipped = true;
+      flippedCards.push(index);
+      
+      const cardElement = document.querySelector(`[data-index="${index}"]`);
+      cardElement.querySelector('.card-front').classList.add('hidden');
+      cardElement.querySelector('.card-back').classList.remove('hidden');
+      
+      if (flippedCards.length === 2) {
+        memoryMoves++;
+        document.getElementById('memoryMoves').textContent = memoryMoves;
+        
+        const [firstIndex, secondIndex] = flippedCards;
+        const firstCard = memoryCards[firstIndex];
+        const secondCard = memoryCards[secondIndex];
+        
+        if (firstCard.id === secondCard.id) {
+          // Match found
+          memoryMatches++;
+          document.getElementById('memoryMatches').textContent = memoryMatches;
+          
+          firstCard.isMatched = true;
+          secondCard.isMatched = true;
+          
+          flippedCards = [];
+          
+          if (memoryMatches === memoryCards.length / 2) {
+            setTimeout(() => {
+              alert(`Congratulations! You completed the game in ${memoryMoves} moves!`);
+            }, 500);
+          }
+        } else {
+          // No match
+          setTimeout(() => {
+            firstCard.isFlipped = false;
+            secondCard.isFlipped = false;
+            
+            const firstCardElement = document.querySelector(`[data-index="${firstIndex}"]`);
+            const secondCardElement = document.querySelector(`[data-index="${secondIndex}"]`);
+            
+            firstCardElement.querySelector('.card-front').classList.remove('hidden');
+            firstCardElement.querySelector('.card-back').classList.add('hidden');
+            
+            secondCardElement.querySelector('.card-front').classList.remove('hidden');
+            secondCardElement.querySelector('.card-back').classList.add('hidden');
+            
+            flippedCards = [];
+          }, 1000);
+        }
+      }
+    }
+
+    // Initialize
+    loadTodayVideos();
+    
+  </script>
+</body>
+
+</html>
