@@ -1,6 +1,6 @@
 /* Main Background and Typography */
 body {
-    background-image: url('../child.jpg');
+    background-image: url('/child.jpg');
     background-size: contain;
     background-repeat: repeat;
     background-attachment: fixed;
