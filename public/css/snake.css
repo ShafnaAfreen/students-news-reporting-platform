@@ -1,0 +1,127 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* Align content from the top */
+    height: 100vh; /* Use full viewport height */
+    background-color: #f5f5f5;
+    font-family: Arial, sans-serif;
+}
+
+
+.big {
+    display: flex;
+    align-items: center; /* Aligns game-container and dice-container properly */
+    gap: 20px; /* Adds spacing between the board and dice */
+}
+
+.heading {
+    background-color: #ffcccb;
+    width: 100%;
+    text-align: center;
+    padding: 20px;
+    font-size: 2rem;
+    font-weight: bold;
+    font-family: cursive;
+    color: #333;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+
+
+
+.dice-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+    justify-content: center;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+}
+
+.dice-image {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 10px; /* Space between dice and button */
+}
+
+#rollDice:hover {
+    background-color: #45a049;
+}
+
+.game-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 500px;
+    width: 500px;
+    margin-top: 20px;
+    background-color: #87CEEB;
+    padding-bottom: 0; /* Reduce if necessary */
+    margin-bottom: 0;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.board {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    width: 500px;
+    height: 500px;
+    gap: 2px;
+    border: 5px solid #333;
+    background-image: url("https://i.pinimg.com/1200x/bf/e4/3b/bfe43b9ce72f95d1860d0a8e4b4e3f85.jpg");
+    background-size: contain; 
+    background-position: center; 
+    background-repeat: no-repeat; 
+    padding: 7px; 
+}
+
+.board div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    width: 100%;
+    height: 100%;
+    transition: background 0.3s ease-in-out;
+}
+
+.board div:hover {
+    background-color: #ff6347;
+    color: white;
+    cursor: pointer;
+}
+
+.top-row {
+    margin-top: 6px;
+}
+.bottom-row {
+    margin-bottom: 10px; 
+}
+.left-col {
+    margin-left: 2px;
+}
+.right-col {
+    margin-right: 10px; 
+}
+
+.player {
+    width: 30px;
+    height: 30px;
+    position: absolute;
+    transition: left 0.3s ease-in-out, top 0.3s ease-in-out;
+}
+
+
