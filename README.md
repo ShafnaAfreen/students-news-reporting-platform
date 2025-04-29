@@ -15,14 +15,11 @@ A web-based platform designed to empower young journalists by providing them wit
 
 ### For Parents
 - **Parent Dashboard**: Monitor your child's activities and progress
-- **Activity Tracking**: View your child's uploaded videos and engagement metrics
 - **Progress Monitoring**: Track video uploads and likes received
 - **Secure Access**: Dedicated parent login with role-based authentication
 
 ### For Journalists
 - **Journalist Dashboard**: Special interface for professional journalists
-- **Content Management**: Upload and manage professional content
-- **Analytics**: Track performance of published content
 
 ## 🚀 Getting Started
 
