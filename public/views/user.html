@@ -187,10 +187,46 @@
     };
 
     // Check authentication state
-    onAuthStateChanged(auth, (user) => {
+    window.loadUserAnnouncements = async () => {
+      try {
+        const announcementsRef = collection(db, 'announcements');
+        const q = query(announcementsRef, orderBy('timestamp', 'desc'));
+        const querySnapshot = await getDocs(q);
+        
+        const announcementsContainer = document.getElementById('announcements-container');
+        if (querySnapshot.empty) {
+          announcementsContainer.innerHTML = '<p class="text-gray-600 text-center">No announcements available.</p>';
+          return;
+        }
+        
+        announcementsContainer.innerHTML = '';
+        querySnapshot.forEach(doc => {
+          const announcement = doc.data();
+          const date = announcement.timestamp ? new Date(announcement.timestamp.toDate()).toLocaleDateString() : 'Unknown date';
+          
+          announcementsContainer.innerHTML += `
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-4">
+              <h3 class="text-xl font-semibold text-gray-800 mb-2">${announcement.title}</h3>
+              <p class="text-gray-600 mb-2">${announcement.message}</p>
+              <div class="text-sm text-gray-500">
+                <span>Posted by: ${announcement.authorName || 'Anonymous'}</span>
+                <span class="mx-2">•</span>
+                <span>${date}</span>
+              </div>
+            </div>
+          `;
+        });
+      } catch (error) {
+        console.error('Error loading announcements:', error);
+        document.getElementById('announcements-container').innerHTML = 
+          '<p class="text-red-600 text-center">Failed to load announcements. Please try again later.</p>';
+      }
+    };
+  onAuthStateChanged(auth, (user) => {
       if (user) {
         console.log('User is signed in:', user.uid);
         localStorage.setItem('loggedInUserId', user.uid);
+        loadUserAnnouncements(); // Load announcements when user is authenticated
       } else {
         console.log('No user is signed in');
         localStorage.removeItem('loggedInUserId');
@@ -208,109 +244,81 @@
     <ul class="flex gap-4 font-medium">
       <li><a href="#home" class="nav-link text-black hover:underline">Home</a></li>
       <li><a href="#my-videos" class="nav-link hover:underline">My Videos</a></li>
+      <li><a href="/views/games.html" class="nav-link hover:underline">Games</a></li>
       <li><a href="#profile" class="nav-link hover:underline">Profile</a></li>
       <li><a href="#upload" class="nav-link hover:underline">Upload</a></li>
     </ul>
   </nav>
 
+  <!-- Latest Announcement Bar -->
+  <div id="latest-announcement-bar" class="bg-yellow-100 text-yellow-900 px-4 py-2 text-center font-semibold" style="display:none;">
+    <!-- Latest announcement will be shown here -->
+  </div>
+
   <!-- Sections -->
   <main class="p-4">
     <!-- Home -->
     <section id="home">
-      <div class="bg-yellow-100 p-2 rounded mb-4">📢 Announcement: Submit your video by April 25!</div>
+      
       <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
         <h2 class="text-xl font-semibold text-gray-800 mb-4">Today's Uploaded Videos</h2>
         <div id="video-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- Videos will be loaded here dynamically -->
         </div>
       </div>
-
-      <!-- Interactive Games Section -->
-      <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4">Interactive Games</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <!-- News Quiz Game -->
-          <div class="border p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-            <h3 class="font-semibold text-lg mb-2">News Quiz</h3>
-            <p class="text-gray-600 text-sm mb-4">Test your knowledge with daily news quizzes!</p>
-            <button id="startQuizBtn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-200 w-full">
-              Start Quiz
-            </button>
-          </div>
-          
-          <!-- Word Scramble -->
-          <div class="border p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-            <h3 class="font-semibold text-lg mb-2">Word Scramble</h3>
-            <p class="text-gray-600 text-sm mb-4">Unscramble news-related words!</p>
-            <button id="startScrambleBtn" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition duration-200 w-full">
-              Play Now
-            </button>
-          </div>
-          
-          <!-- Memory Match -->
-          <div class="border p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-            <h3 class="font-semibold text-lg mb-2">Memory Match</h3>
-            <p class="text-gray-600 text-sm mb-4">Match news headlines with their images!</p>
-            <button id="startMemoryBtn" class="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition duration-200 w-full">
-              Play Now
-            </button>
-          </div>
-        </div>
-        
-        <!-- Game Containers (Hidden by default) -->
-        <div id="quizContainer" class="hidden mt-6 p-4 border rounded-lg">
-          <h3 class="font-semibold text-lg mb-4">Daily News Quiz</h3>
-          <div id="quizQuestions" class="space-y-4">
-            <!-- Questions will be loaded here -->
-          </div>
-          <div class="mt-4 flex justify-between">
-            <button id="prevQuestionBtn" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition duration-200">
-              Previous
-            </button>
-            <button id="nextQuestionBtn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-200">
-              Next
-            </button>
-          </div>
-          <div id="quizResults" class="hidden mt-4 p-4 bg-green-100 rounded-lg">
-            <h4 class="font-semibold text-green-800">Quiz Complete!</h4>
-            <p class="text-green-700">Your score: <span id="quizScore">0</span>/<span id="totalQuestions">0</span></p>
-            <button id="restartQuizBtn" class="mt-2 bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition duration-200">
-              Try Again
-            </button>
-          </div>
-        </div>
-        
-        <div id="scrambleContainer" class="hidden mt-6 p-4 border rounded-lg">
-          <h3 class="font-semibold text-lg mb-4">Word Scramble</h3>
-          <div class="text-center mb-4">
-            <p class="text-xl font-bold" id="scrambledWord">Loading...</p>
-          </div>
-          <div class="flex justify-center mb-4">
-            <input type="text" id="scrambleAnswer" class="w-full max-w-md px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your answer">
-          </div>
-          <div class="flex justify-center">
-            <button id="checkScrambleBtn" class="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600 transition duration-200">
-              Check Answer
-            </button>
-          </div>
-          <div class="mt-4 text-center">
-            <p>Score: <span id="scrambleScore">0</span></p>
-            <p>Words solved: <span id="wordsSolved">0</span>/<span id="totalWords">0</span></p>
-          </div>
-        </div>
-        
-        <div id="memoryContainer" class="hidden mt-6 p-4 border rounded-lg">
-          <h3 class="font-semibold text-lg mb-4">Memory Match</h3>
-          <div id="memoryGrid" class="grid grid-cols-4 gap-2">
-            <!-- Memory cards will be loaded here -->
-          </div>
-          <div class="mt-4 text-center">
-            <p>Moves: <span id="memoryMoves">0</span></p>
-            <p>Matches: <span id="memoryMatches">0</span>/<span id="totalPairs">0</span></p>
+      <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Announcements Section -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <h2 class="text-xl font-semibold text-gray-800 mb-4">Announcements</h2>
+          <div id="announcements-container" class="space-y-4">
+           
+            <p class="text-gray-600 text-center">Loading announcements...</p>
           </div>
         </div>
       </div>
+      <!-- Remove the duplicate imports and modify the announcements section -->
+      
+             
+          </div>
+      </div>
+
+      <script>
+          // Function to load announcements using existing Firebase instance
+          async function loadUserAnnouncements() {
+              const container = document.getElementById('userAnnouncementsList');
+              try {
+                  const q = query(collection(db, 'announcements'), orderBy('timestamp', 'desc'), limit(5));
+                  const querySnapshot = await getDocs(q);
+                  
+                  container.innerHTML = '';
+                  querySnapshot.forEach((doc) => {
+                      const announcement = doc.data();
+                      container.innerHTML += `
+                          <div class="bg-gray-50 p-4 rounded-lg border-l-4 border-pink-300">
+                              <h3 class="font-semibold text-lg mb-2">${announcement.title}</h3>
+                              <p class="text-gray-600 mb-2">${announcement.message}</p>
+                              <div class="text-sm text-gray-500">
+                                  Posted: ${announcement.timestamp ? new Date(announcement.timestamp.toDate()).toLocaleString() : 'Just now'}
+                              </div>
+                          </div>
+                      `;
+                  });
+
+                  if (querySnapshot.empty) {
+                      container.innerHTML = '<p class="text-gray-500">No announcements yet</p>';
+                  }
+              } catch (error) {
+                  console.error('Error loading announcements:', error);
+                  container.innerHTML = '<p class="text-red-500">Failed to load announcements</p>';
+              }
+          }
+
+          // Load announcements when page loads
+          document.addEventListener('DOMContentLoaded', loadUserAnnouncements);
+      </script>
     </section>
+
+ 
 
     <!-- My Videos -->
     <section id="my-videos" class="hidden">
@@ -373,9 +381,12 @@
     // Handle nav clicks
     document.querySelectorAll('nav a').forEach(link => {
       link.addEventListener('click', e => {
-        e.preventDefault();
-        const target = e.target.getAttribute('href').substring(1);
-        showSection(target);
+        const href = e.target.getAttribute('href');
+        if (href.startsWith('#')) {
+          e.preventDefault();
+          const target = href.substring(1);
+          showSection(target);
+        }
       });
     });
 
@@ -657,7 +668,44 @@
         container.innerHTML = '<p class="text-red-600">Failed to load videos. Please try again later.</p>';
       }
     }
+      // ... existing code ...
 
+// Function to load the latest announcement for the top bar
+window.loadLatestAnnouncementBar = async () => {
+  try {
+    const announcementsRef = collection(db, 'announcements');
+    const q = query(announcementsRef, orderBy('timestamp', 'desc'), limit(1));
+    const querySnapshot = await getDocs(q);
+
+    const bar = document.getElementById('latest-announcement-bar');
+    if (querySnapshot.empty) {
+      bar.style.display = 'none';
+      return;
+    }
+
+    const announcement = querySnapshot.docs[0].data();
+    bar.innerHTML = `📢 <span class="font-bold">${announcement.title}:</span> ${announcement.message}`;
+    bar.style.display = 'block';
+  } catch (error) {
+    console.error('Error loading latest announcement:', error);
+    document.getElementById('latest-announcement-bar').style.display = 'none';
+  }
+};
+
+// Call this after authentication is confirmed
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    console.log('User is signed in:', user.uid);
+    localStorage.setItem('loggedInUserId', user.uid);
+    loadUserAnnouncements(); // Load all announcements
+    loadLatestAnnouncementBar(); // Load the latest announcement bar
+  } else {
+    console.log('No user is signed in');
+    localStorage.removeItem('loggedInUserId');
+  }
+});
+
+// ... existing code ...
     // Update loadProfile function
     async function loadProfile() {
       const container = document.getElementById('profile-content');
@@ -711,292 +759,9 @@
         container.innerHTML = '<p class="text-red-600">Failed to load profile. Please try again later.</p>';
       }
     }
+    
 
-    // Games functionality
-    const newsWords = [
-      "JOURNALISM", "REPORTER", "HEADLINE", "NEWSPAPER", "INTERVIEW", 
-      "EDITOR", "ARTICLE", "BROADCAST", "ANCHOR", "PRESS", 
-      "MEDIA", "NEWS", "STORY", "COVERAGE", "SOURCE"
-    ];
-    
-    const quizQuestions = [
-      {
-        question: "What is the primary purpose of journalism?",
-        options: ["To entertain", "To inform the public", "To sell products", "To promote political views"],
-        correct: 1
-      },
-      {
-        question: "Which of these is NOT a type of news media?",
-        options: ["Newspaper", "Television", "Cookbook", "Radio"],
-        correct: 2
-      },
-      {
-        question: "What is the 'inverted pyramid' style in journalism?",
-        options: ["A type of headline", "A way to organize information with the most important details first", "A type of newspaper layout", "A method of interviewing"],
-        correct: 1
-      },
-      {
-        question: "What does 'off the record' mean in journalism?",
-        options: ["Information that cannot be published", "Information that can only be published anonymously", "Information that can be published with attribution", "Information that can be published without verification"],
-        correct: 0
-      },
-      {
-        question: "Which of these is an ethical principle of journalism?",
-        options: ["Always support the government", "Accuracy and fairness", "Maximize profits", "Avoid all controversial topics"],
-        correct: 1
-      }
-    ];
-    
-    // Quiz Game
-    let currentQuestionIndex = 0;
-    let quizScore = 0;
-    
-    document.getElementById('startQuizBtn').addEventListener('click', () => {
-      document.getElementById('quizContainer').classList.remove('hidden');
-      document.getElementById('scrambleContainer').classList.add('hidden');
-      document.getElementById('memoryContainer').classList.add('hidden');
-      loadQuizQuestion();
-    });
-    
-    function loadQuizQuestion() {
-      const question = quizQuestions[currentQuestionIndex];
-      const questionsContainer = document.getElementById('quizQuestions');
-      
-      questionsContainer.innerHTML = `
-        <div class="p-4 bg-gray-50 rounded-lg">
-          <p class="font-semibold mb-2">Question ${currentQuestionIndex + 1} of ${quizQuestions.length}</p>
-          <p class="mb-4">${question.question}</p>
-          <div class="space-y-2">
-            ${question.options.map((option, index) => `
-              <div class="flex items-center">
-                <input type="radio" id="option${index}" name="quizOption" value="${index}" class="mr-2">
-                <label for="option${index}">${option}</label>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `;
-      
-      document.getElementById('prevQuestionBtn').disabled = currentQuestionIndex === 0;
-      document.getElementById('nextQuestionBtn').textContent = currentQuestionIndex === quizQuestions.length - 1 ? 'Finish' : 'Next';
-    }
-    
-    document.getElementById('nextQuestionBtn').addEventListener('click', () => {
-      const selectedOption = document.querySelector('input[name="quizOption"]:checked');
-      
-      if (!selectedOption) {
-        alert('Please select an answer');
-        return;
-      }
-      
-      if (parseInt(selectedOption.value) === quizQuestions[currentQuestionIndex].correct) {
-        quizScore++;
-      }
-      
-      if (currentQuestionIndex < quizQuestions.length - 1) {
-        currentQuestionIndex++;
-        loadQuizQuestion();
-      } else {
-        showQuizResults();
-      }
-    });
-    
-    document.getElementById('prevQuestionBtn').addEventListener('click', () => {
-      if (currentQuestionIndex > 0) {
-        currentQuestionIndex--;
-        loadQuizQuestion();
-      }
-    });
-    
-    function showQuizResults() {
-      document.getElementById('quizQuestions').classList.add('hidden');
-      document.getElementById('quizResults').classList.remove('hidden');
-      document.getElementById('quizScore').textContent = quizScore;
-      document.getElementById('totalQuestions').textContent = quizQuestions.length;
-    }
-    
-    document.getElementById('restartQuizBtn').addEventListener('click', () => {
-      currentQuestionIndex = 0;
-      quizScore = 0;
-      document.getElementById('quizResults').classList.add('hidden');
-      document.getElementById('quizQuestions').classList.remove('hidden');
-      loadQuizQuestion();
-    });
-    
-    // Word Scramble Game
-    let currentWordIndex = 0;
-    let scrambleScore = 0;
-    let solvedWords = 0;
-    
-    document.getElementById('startScrambleBtn').addEventListener('click', () => {
-      document.getElementById('scrambleContainer').classList.remove('hidden');
-      document.getElementById('quizContainer').classList.add('hidden');
-      document.getElementById('memoryContainer').classList.add('hidden');
-      startScrambleGame();
-    });
-    
-    function startScrambleGame() {
-      currentWordIndex = 0;
-      scrambleScore = 0;
-      solvedWords = 0;
-      document.getElementById('scrambleScore').textContent = scrambleScore;
-      document.getElementById('wordsSolved').textContent = solvedWords;
-      document.getElementById('totalWords').textContent = newsWords.length;
-      loadScrambleWord();
-    }
-    
-    function loadScrambleWord() {
-      if (currentWordIndex >= newsWords.length) {
-        alert('Congratulations! You have completed all words!');
-        return;
-      }
-      
-      const word = newsWords[currentWordIndex];
-      const scrambled = scrambleWord(word);
-      document.getElementById('scrambledWord').textContent = scrambled;
-      document.getElementById('scrambleAnswer').value = '';
-    }
-    
-    function scrambleWord(word) {
-      return word.split('').sort(() => Math.random() - 0.5).join('');
-    }
-    
-    document.getElementById('checkScrambleBtn').addEventListener('click', () => {
-      const answer = document.getElementById('scrambleAnswer').value.trim().toUpperCase();
-      const correctWord = newsWords[currentWordIndex];
-      
-      if (answer === correctWord) {
-        scrambleScore += 10;
-        solvedWords++;
-        document.getElementById('scrambleScore').textContent = scrambleScore;
-        document.getElementById('wordsSolved').textContent = solvedWords;
-        alert('Correct! Well done!');
-        currentWordIndex++;
-        loadScrambleWord();
-      } else {
-        alert('Incorrect. Try again!');
-      }
-    });
-    
-    // Memory Match Game
-    let memoryCards = [];
-    let flippedCards = [];
-    let memoryMoves = 0;
-    let memoryMatches = 0;
-    
-    document.getElementById('startMemoryBtn').addEventListener('click', () => {
-      document.getElementById('memoryContainer').classList.remove('hidden');
-      document.getElementById('quizContainer').classList.add('hidden');
-      document.getElementById('scrambleContainer').classList.add('hidden');
-      startMemoryGame();
-    });
-    
-    function startMemoryGame() {
-      memoryMoves = 0;
-      memoryMatches = 0;
-      document.getElementById('memoryMoves').textContent = memoryMoves;
-      document.getElementById('memoryMatches').textContent = memoryMatches;
-      
-      // Create pairs of cards
-      const newsItems = [
-        { id: 1, title: "Breaking News", image: "https://via.placeholder.com/100?text=News" },
-        { id: 2, title: "Local Events", image: "https://via.placeholder.com/100?text=Events" },
-        { id: 3, title: "Politics", image: "https://via.placeholder.com/100?text=Politics" },
-        { id: 4, title: "Technology", image: "https://via.placeholder.com/100?text=Tech" },
-        { id: 5, title: "Sports", image: "https://via.placeholder.com/100?text=Sports" },
-        { id: 6, title: "Entertainment", image: "https://via.placeholder.com/100?text=Entertainment" }
-      ];
-      
-      memoryCards = [];
-      newsItems.forEach(item => {
-        memoryCards.push({ ...item, isFlipped: false, isMatched: false });
-        memoryCards.push({ ...item, isFlipped: false, isMatched: false });
-      });
-      
-      // Shuffle cards
-      memoryCards.sort(() => Math.random() - 0.5);
-      
-      // Render cards
-      const memoryGrid = document.getElementById('memoryGrid');
-      memoryGrid.innerHTML = '';
-      
-      memoryCards.forEach((card, index) => {
-        const cardElement = document.createElement('div');
-        cardElement.classList.add('memory-card', 'h-24', 'bg-gray-200', 'rounded', 'flex', 'items-center', 'justify-center', 'cursor-pointer', 'transition-all', 'duration-300');
-        cardElement.dataset.index = index;
-        cardElement.innerHTML = `
-          <div class="card-inner w-full h-full flex items-center justify-center">
-            <div class="card-front w-full h-full flex items-center justify-center bg-blue-500 text-white font-bold">
-              <span>?</span>
-            </div>
-            <div class="card-back w-full h-full hidden">
-              <img src="${card.image}" alt="${card.title}" class="w-full h-full object-cover">
-            </div>
-          </div>
-        `;
-        
-        cardElement.addEventListener('click', () => flipCard(index));
-        memoryGrid.appendChild(cardElement);
-      });
-      
-      document.getElementById('totalPairs').textContent = newsItems.length;
-    }
-    
-    function flipCard(index) {
-      if (flippedCards.length === 2 || memoryCards[index].isFlipped || memoryCards[index].isMatched) {
-        return;
-      }
-      
-      memoryCards[index].isFlipped = true;
-      flippedCards.push(index);
-      
-      const cardElement = document.querySelector(`[data-index="${index}"]`);
-      cardElement.querySelector('.card-front').classList.add('hidden');
-      cardElement.querySelector('.card-back').classList.remove('hidden');
-      
-      if (flippedCards.length === 2) {
-        memoryMoves++;
-        document.getElementById('memoryMoves').textContent = memoryMoves;
-        
-        const [firstIndex, secondIndex] = flippedCards;
-        const firstCard = memoryCards[firstIndex];
-        const secondCard = memoryCards[secondIndex];
-        
-        if (firstCard.id === secondCard.id) {
-          // Match found
-          memoryMatches++;
-          document.getElementById('memoryMatches').textContent = memoryMatches;
-          
-          firstCard.isMatched = true;
-          secondCard.isMatched = true;
-          
-          flippedCards = [];
-          
-          if (memoryMatches === memoryCards.length / 2) {
-            setTimeout(() => {
-              alert(`Congratulations! You completed the game in ${memoryMoves} moves!`);
-            }, 500);
-          }
-        } else {
-          // No match
-          setTimeout(() => {
-            firstCard.isFlipped = false;
-            secondCard.isFlipped = false;
-            
-            const firstCardElement = document.querySelector(`[data-index="${firstIndex}"]`);
-            const secondCardElement = document.querySelector(`[data-index="${secondIndex}"]`);
-            
-            firstCardElement.querySelector('.card-front').classList.remove('hidden');
-            firstCardElement.querySelector('.card-back').classList.add('hidden');
-            
-            secondCardElement.querySelector('.card-front').classList.remove('hidden');
-            secondCardElement.querySelector('.card-back').classList.add('hidden');
-            
-            flippedCards = [];
-          }, 1000);
-        }
-      }
-    }
+  
 
     // Initialize
     loadTodayVideos();
@@ -1005,3 +770,147 @@
 </body>
 
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

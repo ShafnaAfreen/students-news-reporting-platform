@@ -7,12 +7,13 @@
     <link rel="stylesheet" href="css/styleindex.css">
     <script>
         function login(role) {
-            // Store the role in localStorage (you could use sessions or a more secure method in a real app)
             localStorage.setItem('role', role);
             if (role === 'loginjournalist') {
-                window.location.href = '/loginjournalist';  // Redirect to journalist dashboard
+                window.location.href = '/loginjournalist';
             } else if (role === 'loginuser') {
-                window.location.href = '/loginuser';  // Redirect to user dashboard
+                window.location.href = '/loginuser';
+            } else if (role === 'loginparent') {
+                window.location.href = '/loginparent';
             }
         }
     </script>
@@ -26,6 +27,7 @@
         <div class="login-options">
             <button onclick="login('loginjournalist')">Journalist</button>
             <button onclick="login('loginuser')">User</button>
+            <button onclick="login('loginparent')">Parent</button>
         </div>
     </main>
 </body>
