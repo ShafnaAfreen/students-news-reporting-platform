@@ -93,4 +93,35 @@ if (loginJournalist) {
         }
       });
   });
-} 
+}
+
+// Add this function
+async function postAnnouncement() {
+    const title = document.getElementById('announcementTitle').value.trim();
+    const message = document.getElementById('announcementMessage').value.trim();
+    
+    if (!title || !message) {
+        alert('Please fill in both title and message');
+        return;
+    }
+
+    try {
+        await addDoc(collection(db, 'announcements'), {
+            title,
+            message,
+            timestamp: serverTimestamp(),
+            authorId: auth.currentUser.uid,
+            authorName: auth.currentUser.displayName || 'Anonymous'
+        });
+
+        document.getElementById('announcementTitle').value = '';
+        document.getElementById('announcementMessage').value = '';
+        alert('Announcement posted successfully!');
+    } catch (error) {
+        console.error('Error posting announcement:', error);
+        alert('Failed to post announcement');
+    }
+}
+
+// Add this event listener
+document.getElementById('postAnnouncement').addEventListener('click', postAnnouncement);
