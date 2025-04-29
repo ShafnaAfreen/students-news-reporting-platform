@@ -5,14 +5,14 @@ import { getFirestore, setDoc, doc, getDoc } from "https://www.gstatic.com/fireb
 
 // Firebase config
 const firebaseConfig = {
-  apiKey: "AIzaSyC2lO2AyIpEKgjoj5CQuj8UMdPjGliaX24",
-  authDomain: "news-bd220.firebaseapp.com",
-  projectId: "news-bd220",
-  storageBucket: "news-bd220.firebasestorage.app",
-  messagingSenderId: "525183379799",
-  appId: "1:525183379799:web:388bb092f0e2ef11943612",
-  measurementId: "G-XYVYNB6C63"
-};
+            apiKey: "##",
+            authDomain: "##",
+            projectId: "##",
+            storageBucket: "##",
+            messagingSenderId: "##",
+            appId: "##",
+            measurementId: "##",
+        };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
