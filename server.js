@@ -24,6 +24,11 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'views', 'index.html'));
 });
 
+
+app.get('/loginparent', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'views', 'loginparent.html'));
+});
+
 app.get('/loginjournalist', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'views', 'loginjournalist.html'));
 });
@@ -44,8 +49,20 @@ app.get('/journalist', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'views', 'journalist.html'));
 });
 
+app.get('/parent', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'views', 'parent.html'));
+});
+
+app.get('/views/announcements.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'views', 'announcements.html'));
+});
+
+app.get('/views/announcements.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'views', 'announcements.html'));
+});
+
 // Server setup
-const PORT = 3000;
+const PORT = 5501;
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
